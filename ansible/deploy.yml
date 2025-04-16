@@ -1,0 +1,49 @@
+- name: Configure Web Server
+  hosts: web
+  become: true
+
+  tasks:
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Start NGINX
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Create app directory
+      file:
+        path: /var/www/myapp
+        state: directory
+        mode: '0755'
+
+    - name: Install Docker
+      apt:
+        name: ["docker.io"]
+        state: present
+        update_cache: yes
+   
+    - name: Docker login using ACR admin credentials
+      shell: |
+        docker login lanceacrdev2025.azurecr.io -u lanceacrdev2025 -p 
+
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Pull Docker image from ACR
+      shell: |
+        docker pull lanceacrdev2025.azurecr.io/my-dotnet-app:v1
+
+    - name: Run Docker container
+      shell: |
+        docker run -d --name my-dotnet-app -p 5000:5000 lanceacrdev2025.azurecr.io/my-dotnet-app:v1
+      args:
+        creates: /var/run/docker.sock
