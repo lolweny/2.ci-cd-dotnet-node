@@ -1,32 +1,35 @@
-name: CI/CD Pipeline
+name: CI - Build & Push to ACR
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
 
 jobs:
-  build-test-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Log in to Azure
+        uses: azure/login@v1
         with:
-          node-version: '16'
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run tests
-        run: npm test
-
-      - name: Deploy via Ansible
-        uses: dawidd6/action-ansible-playbook@v2
+      - name: Azure Container Registry Login
+        uses: azure/docker-login@v1
         with:
-          playbook: ./ansible/deploy.yml
-          inventory: ./ansible/inventory.ini
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          login-server: lanceacrdev2025.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t lanceacrdev2025.azurecr.io/my-dotnet-app:v1 ./app/MyDotNetApp
+
+      - name: Push Docker image to ACR
+        run: |
+          docker push lanceacrdev2025.azurecr.io/my-dotnet-app:v1
 
