@@ -26,11 +26,6 @@
         name: ["docker.io"]
         state: present
         update_cache: yes
-   
-    - name: Docker login using ACR admin credentials
-      shell: |
-        docker login lanceacrdev2025.azurecr.io -u lanceacrdev2025 -p 
-
 
     - name: Start Docker service
       service:
@@ -38,12 +33,19 @@
         state: started
         enabled: true
 
+    - name: Docker login using ACR admin credentials
+      shell: echo "{{ acr_password }}" | docker login lanceacrdev2025.azurecr.io --username lanceacrdev2025 --password-stdin
+      vars:
+        acr_password: "{{ lookup('env', 'ACR_PASSWORD') }}"
+
     - name: Pull Docker image from ACR
+      shell: docker pull lanceacrdev2025.azurecr.io/my-dotnet-app:v1
+
+    - name: Stop and remove existing container if it exists
       shell: |
-        docker pull lanceacrdev2025.azurecr.io/my-dotnet-app:v1
+        docker rm -f my-dotnet-app || true
 
     - name: Run Docker container
       shell: |
         docker run -d --name my-dotnet-app -p 5000:5000 lanceacrdev2025.azurecr.io/my-dotnet-app:v1
-      args:
-        creates: /var/run/docker.sock
+
