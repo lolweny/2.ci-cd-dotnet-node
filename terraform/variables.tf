@@ -1,3 +1,5 @@
-# variables.tf
-# You can define variables here later if needed
+variable "location" {
+  description = "The Azure Region"
+  default     = "eastus"
+}
 

@@ -5,13 +5,13 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "rg" {
   name     = "ci-cd-rg"
-  location = "East US"
+  location = var.location
 }
 
 resource "azurerm_virtual_network" "vnet" {
   name                = "ci-cd-vnet"
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.rg.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
 }
 
@@ -22,9 +22,17 @@ resource "azurerm_subnet" "subnet" {
   address_prefixes     = ["10.0.1.0/24"]
 }
 
+resource "azurerm_public_ip" "public_ip" {
+  name                = "ci-cd-ip"
+  location            = var.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Dynamic"
+  sku                 = "Basic"
+}
+
 resource "azurerm_network_interface" "nic" {
   name                = "ci-cd-nic"
-  location            = azurerm_resource_group.rg.location
+  location            = var.location
   resource_group_name = azurerm_resource_group.rg.name
 
   ip_configuration {
@@ -35,18 +43,10 @@ resource "azurerm_network_interface" "nic" {
   }
 }
 
-resource "azurerm_public_ip" "public_ip" {
-  name                = "ci-cd-ip"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Dynamic"
-  sku                 = "Basic"
-}
-
 resource "azurerm_linux_virtual_machine" "vm" {
   name                  = "ci-cd-vm"
   resource_group_name   = azurerm_resource_group.rg.name
-  location              = azurerm_resource_group.rg.location
+  location              = var.location
   size                  = "Standard_B1s"
   admin_username        = "azureuser"
   network_interface_ids = [azurerm_network_interface.nic.id]
@@ -62,10 +62,10 @@ resource "azurerm_linux_virtual_machine" "vm" {
   }
 
   source_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "18.04-LTS"
-    version   = "latest"
+  publisher = "Canonical"
+  offer     = "0001-com-ubuntu-server-focal"
+  sku       = "20_04-lts"
+  version   = "latest"
   }
 }
 
